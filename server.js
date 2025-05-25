@@ -21,55 +21,61 @@ mongoose
     process.exit(1);
   });
 
-// User Schema
-const userSchema = new mongoose.Schema(
-  {
-    googleId: { type: String, required: true, unique: true },
-    email: { type: String, required: true },
-    name: String,
-    picture: String,
-  },
-  { timestamps: true }
-);
+// ---------- SCHEMAS ----------
+const userSchema = new mongoose.Schema({
+  googleId: { type: String, required: true, unique: true },
+  email: { type: String, required: true },
+  name: String,
+  picture: String,
+}, { timestamps: true });
 
 const User = mongoose.model("User", userSchema);
 
-// Gift Schema
-const giftSchema = new mongoose.Schema(
-  {
-    senderId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
-    receiverEmail: { type: String, required: true },
-    textMessage: String,
-    imageUrl: String,
-    videoUrl: String,
-    unlockTimestamp: { type: Date, required: true },
-    passcode: { type: String, required: true },
-    isOpened: { type: Boolean, default: false },
-  },
-  { timestamps: true }
-);
+const giftSchema = new mongoose.Schema({
+  senderId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
+  receiverEmail: { type: String, required: true },
+  textMessage: String,
+  imageUrl: String,
+  videoUrl: String,
+  unlockTimestamp: { type: Date, required: true },
+  passcode: { type: String, required: true },
+  isOpened: { type: Boolean, default: false },
+}, { timestamps: true });
 
 const Gift = mongoose.model("Gift", giftSchema);
 
-// Google Auth Route
+// ✅ NEW: Transaction Schema
+const transactionSchema = new mongoose.Schema({
+  giftId: { type: mongoose.Schema.Types.ObjectId, ref: "Gift", required: true },
+  sender: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
+  receiverEmail: { type: String, required: true },
+  openedBy: String, // email of who opened
+  content: {
+    textMessage: String,
+    imageUrl: String,
+    videoUrl: String
+  },
+  status: { type: String, enum: ["CREATED", "OPENED"], required: true },
+  timestamp: { type: Date, default: Date.now }
+});
+
+const Transaction = mongoose.model("Transaction", transactionSchema);
+
+// ---------- ROUTES ----------
+
+// Google Auth
 app.post("/api/auth/google", async (req, res) => {
   const { accessToken } = req.body;
-
-  if (!accessToken) {
-    return res.status(400).json({ error: "Access token is required" });
-  }
+  if (!accessToken) return res.status(400).json({ error: "Access token required" });
 
   try {
     const response = await fetch("https://www.googleapis.com/oauth2/v3/userinfo", {
       headers: { Authorization: `Bearer ${accessToken}` },
     });
 
-    if (!response.ok) {
-      return res.status(401).json({ error: "Invalid access token" });
-    }
+    if (!response.ok) return res.status(401).json({ error: "Invalid access token" });
 
     const payload = await response.json();
-
     const { sub: googleId, email, name, picture } = payload;
 
     let user = await User.findOne({ googleId });
@@ -122,7 +128,15 @@ app.post("/api/gift", async (req, res) => {
 
     await gift.save();
 
-    // Return gift ID along with the gift
+    // ✅ Log Transaction - Created
+    await Transaction.create({
+      giftId: gift._id,
+      sender: senderId,
+      receiverEmail,
+      content: { textMessage, imageUrl, videoUrl },
+      status: "CREATED"
+    });
+
     res.status(201).json({ message: "Gift created successfully", gift: { _id: gift._id, ...gift.toObject() } });
   } catch (error) {
     console.error("Gift creation error:", error);
@@ -157,6 +171,20 @@ app.post("/api/gift/open", async (req, res) => {
     gift.isOpened = true;
     await gift.save();
 
+    // ✅ Log Transaction - Opened
+    await Transaction.create({
+      giftId,
+      sender: gift.senderId,
+      receiverEmail: gift.receiverEmail,
+      openedBy: userEmail,
+      content: {
+        textMessage: gift.textMessage,
+        imageUrl: gift.imageUrl,
+        videoUrl: gift.videoUrl,
+      },
+      status: "OPENED"
+    });
+
     res.status(200).json({ message: "Gift opened successfully", gift });
   } catch (error) {
     console.error("Error opening gift:", error);
@@ -164,7 +192,19 @@ app.post("/api/gift/open", async (req, res) => {
   }
 });
 
-// Get gifts by sender
+// Get All Transactions (admin or user purpose)
+app.get("/api/transactions", async (req, res) => {
+  try {
+    const transactions = await Transaction.find()
+      .populate("giftId", "createdAt")
+      .populate("sender", "name email");
+    res.status(200).json(transactions);
+  } catch (err) {
+    res.status(500).json({ error: "Failed to fetch transactions" });
+  }
+});
+
+// Gifts sent by a specific user
 app.get("/api/gifts/by-user/:userId", async (req, res) => {
   try {
     const gifts = await Gift.find({ senderId: req.params.userId }).sort({ createdAt: -1 });
