@@ -11,7 +11,7 @@ import type { User } from "./types";
 import styled, { ThemeProvider, createGlobalStyle } from "styled-components";
 import { useState, useEffect } from "react";
 
-const BACKEND_URL = "http://localhost:5000";
+const BACKEND_URL = "https://chrono-gift.onrender.com";
 
 // ---- Themes ----
 const lightTheme = {
