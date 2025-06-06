@@ -3,7 +3,7 @@ import axios from "axios";
 import type { User } from "./types";
 import styled, { keyframes, ThemeProvider, createGlobalStyle } from "styled-components";
 
-const BACKEND_URL = "http://localhost:5000";
+const BACKEND_URL = "https://chrono-gift.onrender.com";
 
 // Define light and dark themes with a mode property for easy checks
 const lightTheme = {
