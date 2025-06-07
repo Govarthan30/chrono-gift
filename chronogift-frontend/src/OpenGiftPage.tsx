@@ -8,7 +8,6 @@ import styled, { keyframes, ThemeProvider, createGlobalStyle } from "styled-comp
 const BACKEND_URL = "https://chrono-gift.onrender.com";
 
 // --- THEME SETUP ---
-
 const lightTheme = {
   background: "linear-gradient(135deg, #cce7ff 0%, #5a9bd5 100%)",
   cardBg: "white",
@@ -87,7 +86,7 @@ const Label = styled.label`
   text-align: left;
 `;
 
-const Input = styled.input`
+const Input = styled.input<{ isDarkMode: boolean }>`
   width: 90%;
   padding: 10px 14px;
   font-size: 1rem;
@@ -97,7 +96,7 @@ const Input = styled.input`
   transition: border-color 0.3s ease;
   font-family: inherit;
   color: ${({ theme }) => theme.textPrimary};
-  background: ${({ theme }) => (theme === darkTheme ? "#14243e" : "white")};
+  background: ${({ isDarkMode }) => (isDarkMode ? "#14243e" : "white")};
 
   &:focus {
     border-color: ${({ theme }) => theme.inputFocusBorder};
@@ -179,7 +178,7 @@ const ThemeToggleBtn = styled.button`
   }
 `;
 
-// Custom hook to manage theme with system preference listening and localStorage
+// --- THEME HOOK ---
 function useTheme() {
   const [theme, setTheme] = useState<"light" | "dark">("light");
 
@@ -215,8 +214,9 @@ function useTheme() {
   return { theme, toggleTheme };
 }
 
+// --- MAIN COMPONENT ---
 function OpenGiftPage() {
-  const { giftId } = useParams<{ giftId: string }>();
+  const { giftId } = useParams();
   const [pageState, setPageState] = useState<"auth" | "passcode" | "opened" | "error">("auth");
   const [accessToken, setAccessToken] = useState<string | null>(null);
   const [passcode, setPasscode] = useState("");
@@ -256,15 +256,12 @@ function OpenGiftPage() {
       setGift(res.data.gift);
       setPageState("opened");
 
-      // Optionally log that gift was opened
       await axios.post(`${BACKEND_URL}/api/gift/log-open`, {
         giftId,
         accessToken,
-      }).catch(() => {
-        // Fail silently if logging fails
-      });
+      }).catch(() => {});
     } catch (err) {
-      const axiosError = err as AxiosError<{ error: string }>;
+      const axiosError = err as AxiosError<{ error?: string }>;
       const serverError = axiosError.response?.data?.error || "An unknown error occurred.";
       setError(serverError);
       setPageState("error");
@@ -297,6 +294,7 @@ function OpenGiftPage() {
               onChange={(e) => setPasscode(e.target.value)}
               placeholder="Enter passcode"
               autoFocus
+              isDarkMode={theme === "dark"}
             />
             <Button onClick={handleOpenGift} disabled={loading}>
               {loading ? "Opening..." : "Open Gift"}
@@ -337,7 +335,7 @@ function OpenGiftPage() {
     }
   };
 
-  if (!giftId)
+  if (!giftId || typeof giftId !== "string") {
     return (
       <ThemeProvider theme={theme === "light" ? lightTheme : darkTheme}>
         <GlobalStyle />
@@ -348,6 +346,7 @@ function OpenGiftPage() {
         </PageContainer>
       </ThemeProvider>
     );
+  }
 
   return (
     <ThemeProvider theme={theme === "light" ? lightTheme : darkTheme}>
@@ -359,7 +358,6 @@ function OpenGiftPage() {
       >
         {theme === "light" ? "🌙" : "☀️"}
       </ThemeToggleBtn>
-
       <PageContainer>
         <Card>{renderContent()}</Card>
       </PageContainer>
