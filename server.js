@@ -127,8 +127,8 @@ app.post("/api/gift", async (req, res) => {
   }
 
   try {
-    // Convert to IST before saving
-    const istDate = moment.tz(unlockTimestamp, "Asia/Kolkata").toDate();
+    // FIX: parse input as IST local time exactly
+    const istDate = moment.tz(unlockTimestamp, "Asia/Kolkata", true).toDate();
 
     const gift = new Gift({
       senderId,
