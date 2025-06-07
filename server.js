@@ -25,30 +25,38 @@ mongoose
 
 // ---------- SCHEMAS ----------
 
-const userSchema = new mongoose.Schema({
-  googleId: { type: String, required: true, unique: true },
-  email: { type: String, required: true, unique: true },
-  name: String,
-  picture: String,
-}, { timestamps: true });
+const userSchema = new mongoose.Schema(
+  {
+    googleId: { type: String, required: true, unique: true },
+    email: { type: String, required: true, unique: true },
+    name: String,
+    picture: String,
+  },
+  { timestamps: true }
+);
 
 const User = mongoose.model("User", userSchema);
 
-const giftSchema = new mongoose.Schema({
-  senderId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
-  receiverId: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
-  receiverEmail: { type: String, required: true, lowercase: true, trim: true },
-  textMessage: String,
-  imageUrl: String,
-  videoUrl: String,
-  unlockTimestamp: { type: Date, required: true },
-  passcode: { type: String, required: true },
-  isOpened: { type: Boolean, default: false },
-}, { timestamps: true });
+const giftSchema = new mongoose.Schema(
+  {
+    senderId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
+    receiverId: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+    receiverEmail: { type: String, required: true, lowercase: true, trim: true },
+    textMessage: String,
+    imageUrl: String,
+    videoUrl: String,
+    unlockTimestamp: { type: Date, required: true },
+    passcode: { type: String, required: true, select: true },
+    isOpened: { type: Boolean, default: false },
+  },
+  { timestamps: true }
+);
 
 // 🔐 Hash passcode before saving
 giftSchema.pre("save", async function (next) {
   if (!this.isModified("passcode")) return next();
+
+  console.log(`🔒 Hashing passcode for gift ${this._id || "(new gift)"}`);
   try {
     const salt = await bcrypt.genSalt(10);
     this.passcode = await bcrypt.hash(this.passcode, salt);
@@ -59,26 +67,33 @@ giftSchema.pre("save", async function (next) {
 });
 
 giftSchema.methods.comparePasscode = async function (enteredPasscode) {
+  console.log(`🔑 Comparing entered passcode "${enteredPasscode}" with stored hash`);
   return await bcrypt.compare(enteredPasscode, this.passcode);
 };
 
 const Gift = mongoose.model("Gift", giftSchema);
 
-const transactionSchema = new mongoose.Schema({
-  giftId: { type: mongoose.Schema.Types.ObjectId, ref: "Gift", required: true },
-  sender: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
-  receiver: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
-  status: { type: String, enum: ["CREATED", "OPENED"], required: true },
-}, { timestamps: true });
+const transactionSchema = new mongoose.Schema(
+  {
+    giftId: { type: mongoose.Schema.Types.ObjectId, ref: "Gift", required: true },
+    sender: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
+    receiver: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+    status: { type: String, enum: ["CREATED", "OPENED"], required: true },
+  },
+  { timestamps: true }
+);
 
 const Transaction = mongoose.model("Transaction", transactionSchema);
 
-const messageSchema = new mongoose.Schema({
-  giftId: { type: mongoose.Schema.Types.ObjectId, ref: "Gift", required: true },
-  senderId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
-  receiverEmail: { type: String, required: true },
-  messageText: { type: String, required: true },
-}, { timestamps: true });
+const messageSchema = new mongoose.Schema(
+  {
+    giftId: { type: mongoose.Schema.Types.ObjectId, ref: "Gift", required: true },
+    senderId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
+    receiverEmail: { type: String, required: true },
+    messageText: { type: String, required: true },
+  },
+  { timestamps: true }
+);
 
 const GiftMessage = mongoose.model("GiftMessage", messageSchema);
 
@@ -127,7 +142,7 @@ app.post("/api/gift", async (req, res) => {
   }
 
   try {
-    // FIX: parse input as IST local time exactly
+    // Parse unlockTimestamp as IST exactly (strict mode)
     const istDate = moment.tz(unlockTimestamp, "Asia/Kolkata", true).toDate();
 
     const gift = new Gift({
@@ -137,8 +152,9 @@ app.post("/api/gift", async (req, res) => {
       imageUrl,
       videoUrl,
       unlockTimestamp: istDate,
-      passcode,
+      passcode, // Plain passcode - will be hashed by pre-save hook
     });
+
     await gift.save();
 
     await Transaction.create({ giftId: gift._id, sender: senderId, status: "CREATED" });
@@ -159,7 +175,9 @@ app.post("/api/gift/open", async (req, res) => {
 
   try {
     const receiverUser = await verifyGoogleTokenAndGetUser(accessToken);
-    const gift = await Gift.findById(giftId);
+
+    // Make sure to fetch the passcode field explicitly for comparison
+    const gift = await Gift.findById(giftId).select("+passcode");
     if (!gift) return res.status(404).json({ error: "Gift not found" });
 
     if (gift.receiverEmail !== receiverUser.email.toLowerCase()) {
@@ -193,7 +211,11 @@ app.post("/api/gift/open", async (req, res) => {
       status: "OPENED",
     });
 
-    res.status(200).json({ message: "Gift opened successfully!", gift });
+    // Exclude passcode from response for security
+    const giftObj = gift.toObject();
+    delete giftObj.passcode;
+
+    res.status(200).json({ message: "Gift opened successfully!", gift: giftObj });
   } catch (error) {
     console.error("Error opening gift:", error);
     res.status(500).json({ error: error.message || "Failed to open gift." });
@@ -203,6 +225,7 @@ app.post("/api/gift/open", async (req, res) => {
 // 📦 Get Gift By ID
 app.get("/api/gift/:id", async (req, res) => {
   try {
+    // Exclude passcode and receiverEmail in response
     const gift = await Gift.findById(req.params.id).select("-passcode -receiverEmail");
     if (!gift) return res.status(404).json({ error: "Gift not found" });
     res.status(200).json(gift);
@@ -231,8 +254,7 @@ app.post("/api/gift/messages", async (req, res) => {
 // 💬 Get All Messages
 app.get("/api/gift/messages/:giftId", async (req, res) => {
   try {
-    const messages = await GiftMessage.find({ giftId: req.params.giftId })
-      .populate("senderId", "name email");
+    const messages = await GiftMessage.find({ giftId: req.params.giftId }).populate("senderId", "name email");
     res.status(200).json(messages);
   } catch (error) {
     console.error("Error fetching messages:", error);
