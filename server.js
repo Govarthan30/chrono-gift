@@ -2,9 +2,8 @@ import express from "express";
 import cors from "cors";
 import mongoose from "mongoose";
 import dotenv from "dotenv";
-import fetch from "node-fetch";
+import fetch from "node-fetch"; // npm install node-fetch@2
 import bcrypt from "bcrypt";
-import { DateTime } from "luxon";
 
 dotenv.config();
 
@@ -25,32 +24,26 @@ mongoose
 
 // ---------- SCHEMAS ----------
 
-const userSchema = new mongoose.Schema(
-  {
-    googleId: { type: String, required: true, unique: true },
-    email: { type: String, required: true, unique: true },
-    name: String,
-    picture: String,
-  },
-  { timestamps: true }
-);
+const userSchema = new mongoose.Schema({
+  googleId: { type: String, required: true, unique: true },
+  email: { type: String, required: true, unique: true },
+  name: String,
+  picture: String,
+}, { timestamps: true });
 
 const User = mongoose.model("User", userSchema);
 
-const giftSchema = new mongoose.Schema(
-  {
-    senderId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
-    receiverId: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
-    receiverEmail: { type: String, required: true, lowercase: true, trim: true },
-    textMessage: String,
-    imageUrl: String,
-    videoUrl: String,
-    unlockTimestamp: { type: Date, required: true },
-    passcode: { type: String, required: true },
-    isOpened: { type: Boolean, default: false },
-  },
-  { timestamps: true }
-);
+const giftSchema = new mongoose.Schema({
+  senderId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
+  receiverId: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+  receiverEmail: { type: String, required: true, lowercase: true, trim: true },
+  textMessage: String,
+  imageUrl: String,
+  videoUrl: String,
+  unlockTimestamp: { type: Date, required: true },
+  passcode: { type: String, required: true },
+  isOpened: { type: Boolean, default: false },
+}, { timestamps: true });
 
 giftSchema.pre("save", async function (next) {
   if (!this.isModified("passcode")) return next();
@@ -64,35 +57,26 @@ giftSchema.pre("save", async function (next) {
 });
 
 giftSchema.methods.comparePasscode = async function (enteredPasscode) {
-  if (!this.passcode) {
-    throw new Error("Passcode hash missing from gift document");
-  }
   return await bcrypt.compare(enteredPasscode, this.passcode);
 };
 
 const Gift = mongoose.model("Gift", giftSchema);
 
-const transactionSchema = new mongoose.Schema(
-  {
-    giftId: { type: mongoose.Schema.Types.ObjectId, ref: "Gift", required: true },
-    sender: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
-    receiver: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
-    status: { type: String, enum: ["CREATED", "OPENED"], required: true },
-  },
-  { timestamps: true }
-);
+const transactionSchema = new mongoose.Schema({
+  giftId: { type: mongoose.Schema.Types.ObjectId, ref: "Gift", required: true },
+  sender: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
+  receiver: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+  status: { type: String, enum: ["CREATED", "OPENED"], required: true },
+}, { timestamps: true });
 
 const Transaction = mongoose.model("Transaction", transactionSchema);
 
-const messageSchema = new mongoose.Schema(
-  {
-    giftId: { type: mongoose.Schema.Types.ObjectId, ref: "Gift", required: true },
-    senderId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
-    receiverEmail: { type: String, required: true },
-    messageText: { type: String, required: true },
-  },
-  { timestamps: true }
-);
+const messageSchema = new mongoose.Schema({
+  giftId: { type: mongoose.Schema.Types.ObjectId, ref: "Gift", required: true },
+  senderId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
+  receiverEmail: { type: String, required: true },
+  messageText: { type: String, required: true },
+}, { timestamps: true });
 
 const GiftMessage = mongoose.model("GiftMessage", messageSchema);
 
@@ -117,7 +101,6 @@ const verifyGoogleTokenAndGetUser = async (accessToken) => {
 
 // ---------- ROUTES ----------
 
-// Google OAuth login
 app.post("/api/auth/google", async (req, res) => {
   const { accessToken } = req.body;
   if (!accessToken) return res.status(400).json({ error: "Access token required" });
@@ -134,7 +117,6 @@ app.post("/api/auth/google", async (req, res) => {
   }
 });
 
-// Create gift (with India timezone handling)
 app.post("/api/gift", async (req, res) => {
   const { senderId, receiverEmail, textMessage, imageUrl, videoUrl, unlockTimestamp, passcode } = req.body;
   if (!senderId || !receiverEmail || !unlockTimestamp || !passcode) {
@@ -142,22 +124,7 @@ app.post("/api/gift", async (req, res) => {
   }
 
   try {
-    // Convert unlockTimestamp to India timezone (Asia/Kolkata)
-    const indiaTime = DateTime.fromISO(unlockTimestamp, { zone: "Asia/Kolkata" });
-    if (!indiaTime.isValid) {
-      return res.status(400).json({ error: "Invalid unlockTimestamp format" });
-    }
-
-    const gift = new Gift({
-      senderId,
-      receiverEmail,
-      textMessage,
-      imageUrl,
-      videoUrl,
-      unlockTimestamp: indiaTime.toJSDate(),
-      passcode,
-    });
-
+    const gift = new Gift({ senderId, receiverEmail, textMessage, imageUrl, videoUrl, unlockTimestamp, passcode });
     await gift.save();
 
     await Transaction.create({ giftId: gift._id, sender: senderId, status: "CREATED" });
@@ -169,7 +136,6 @@ app.post("/api/gift", async (req, res) => {
   }
 });
 
-// Open gift with passcode check
 app.post("/api/gift/open", async (req, res) => {
   const { giftId, enteredPasscode, accessToken } = req.body;
   if (!giftId || !enteredPasscode || !accessToken) {
@@ -191,9 +157,7 @@ app.post("/api/gift/open", async (req, res) => {
     }
 
     if (Date.now() < new Date(gift.unlockTimestamp).getTime()) {
-      return res.status(403).json({
-        error: `This gift cannot be opened until ${new Date(gift.unlockTimestamp).toLocaleString("en-IN", { timeZone: "Asia/Kolkata" })}`,
-      });
+      return res.status(403).json({ error: `This gift cannot be opened until ${new Date(gift.unlockTimestamp).toLocaleString()}` });
     }
 
     const isPasscodeCorrect = await gift.comparePasscode(enteredPasscode);
@@ -219,10 +183,9 @@ app.post("/api/gift/open", async (req, res) => {
   }
 });
 
-// Get gift by ID (exclude passcode and receiverEmail)
 app.get("/api/gift/:id", async (req, res) => {
   try {
-    const gift = await Gift.findById(req.params.id).select("-passcode -receiverEmail");
+    const gift = await Gift.findById(req.params.id).select('-passcode -receiverEmail');
     if (!gift) return res.status(404).json({ error: "Gift not found" });
     res.status(200).json(gift);
   } catch (err) {
@@ -231,7 +194,7 @@ app.get("/api/gift/:id", async (req, res) => {
   }
 });
 
-// Save a gift message
+// 💬 Save a gift message
 app.post("/api/gift/messages", async (req, res) => {
   const { giftId, senderId, receiverEmail, messageText } = req.body;
   if (!giftId || !senderId || !receiverEmail || !messageText) {
@@ -247,10 +210,11 @@ app.post("/api/gift/messages", async (req, res) => {
   }
 });
 
-// Fetch all messages for a gift
+// 📜 Fetch all messages for a gift
 app.get("/api/gift/messages/:giftId", async (req, res) => {
   try {
-    const messages = await GiftMessage.find({ giftId: req.params.giftId }).populate("senderId", "name email");
+    const messages = await GiftMessage.find({ giftId: req.params.giftId })
+      .populate("senderId", "name email");
     res.status(200).json(messages);
   } catch (error) {
     console.error("Error fetching messages:", error);
@@ -258,7 +222,7 @@ app.get("/api/gift/messages/:giftId", async (req, res) => {
   }
 });
 
-// All transactions
+// 🧾 All transactions
 app.get("/api/transactions", async (req, res) => {
   try {
     const transactions = await Transaction.find()
