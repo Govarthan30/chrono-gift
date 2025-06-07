@@ -1,36 +1,41 @@
-// Updated ChronoGift LoginPage with
-// - Theme toggle (Dark/Light)
-// - Mobile responsiveness
-// - Blue-based consistent themes
-// - Prepared for storing frontend messages
-
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { useGoogleLogin } from "@react-oauth/google";
 import type { User } from "./types";
-import styled, { ThemeProvider, createGlobalStyle } from "styled-components";
-import { useState, useEffect } from "react";
+import styled, { ThemeProvider, createGlobalStyle,DefaultTheme } from "styled-components";
 
 const BACKEND_URL = "https://chrono-gift.onrender.com";
 
-// ---- Themes ----
-const lightTheme = {
-  background: "#f0f8ff",
+// ---- Single fixed theme (light) ----
+const lightTheme: DefaultTheme = {
+  mode: "light", 
+  background: "#f0f4f8",
+  backgroundGradient: "linear-gradient(135deg, #cce7ff 0%, #5a9bd5 100%)",
+  headingColor: "#004080",
   cardBackground: "#ffffff",
-  primaryText: "#1d3b73",
-  secondaryText: "#555",
-  buttonGradient: "linear-gradient(45deg, #3a7bd5, #00d2ff)",
-  footerBg: "#f0f8ff",
+  cardBg: "#ffffff",          // duplicate key, keep both for compatibility
+  cardTextColor: "#004080",
+  textPrimary: "#004080",
+  textSecondary: "#004080cc",
+  primaryText: "#004080",
+  secondaryText: "#004080cc",
+  buttonBg: "#357ABD",
+  buttonGradient: "linear-gradient(45deg, #4a90e2, #357ABD)",
+  buttonHoverBg: "#4a90e2",
+  buttonHoverGradient: "linear-gradient(45deg, #357ABD, #4a90e2)",
+  inputBorder: "#357ABD",
+  inputBackground: "#ffffff",
+  inputColor: "#004080",
+  inputFocusBorder: "#74a9ff",
+  errorColor: "#cc0000",
+  subHeadingColor: "#0059b3",
+  footerColor: "#004080",
+  footerBg: "#e0e7ff",
+  logoutBg: "#cc3300",
+  logoutHoverBg: "#ff0000",
+  boxShadow: "0 4px 15px rgba(58, 123, 255, 0.4), 0 8px 30px rgba(0, 0, 0, 0.1)",
 };
 
-const darkTheme = {
-  background: "#0f172a",
-  cardBackground: "#1e293b",
-  primaryText: "#38bdf8",
-  secondaryText: "#cbd5e1",
-  buttonGradient: "linear-gradient(45deg, #2563eb, #38bdf8)",
-  footerBg: "#1e293b",
-};
 
 const GlobalStyle = createGlobalStyle`
   body {
@@ -122,34 +127,8 @@ const Footer = styled.footer`
   }
 `;
 
-const ThemeToggle = styled.button`
-  position: absolute;
-  top: 20px;
-  right: 20px;
-  background: transparent;
-  border: 2px solid ${({ theme }) => theme.primaryText};
-  color: ${({ theme }) => theme.primaryText};
-  padding: 6px 12px;
-  border-radius: 20px;
-  cursor: pointer;
-  font-weight: bold;
-  font-size: 0.9rem;
-`;
-
 function LoginPage({ onLogin }: { onLogin: (user: User) => void }) {
   const navigate = useNavigate();
-  const [themeMode, setThemeMode] = useState("light");
-
-  useEffect(() => {
-    const saved = localStorage.getItem("themeMode");
-    if (saved) setThemeMode(saved);
-  }, []);
-
-  const toggleTheme = () => {
-    const newTheme = themeMode === "light" ? "dark" : "light";
-    setThemeMode(newTheme);
-    localStorage.setItem("themeMode", newTheme);
-  };
 
   const handleLogin = useGoogleLogin({
     onSuccess: async (credentialResponse) => {
@@ -172,12 +151,9 @@ function LoginPage({ onLogin }: { onLogin: (user: User) => void }) {
   });
 
   return (
-    <ThemeProvider theme={themeMode === "light" ? lightTheme : darkTheme}>
+    <ThemeProvider theme={lightTheme}>
       <GlobalStyle />
       <PageContainer>
-        <ThemeToggle onClick={toggleTheme}>
-          {themeMode === "light" ? "🌙 Dark" : "☀️ Light"}
-        </ThemeToggle>
         <Card>
           <h1>Welcome to ChronoGift 🎁</h1>
           <p>Send digital gifts that unlock in the future.</p>
@@ -186,7 +162,11 @@ function LoginPage({ onLogin }: { onLogin: (user: User) => void }) {
       </PageContainer>
       <Footer>
         Developed by {" "}
-        <a href="https://www.linkedin.com/in/govarthan-v/" target="_blank" rel="noopener noreferrer">
+        <a
+          href="https://www.linkedin.com/in/govarthan-v/"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
           Govarthan V
         </a>
       </Footer>
