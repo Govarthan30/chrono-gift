@@ -9,7 +9,7 @@ export const GlobalStyle = createGlobalStyle`
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     background: ${({ theme }) => theme.backgroundGradient};
-    color: ${({ theme }) => theme.text};
+    color: blue;
     transition: background 0.3s, color 0.3s;
   }
 
