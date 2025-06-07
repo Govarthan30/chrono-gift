@@ -2,8 +2,9 @@ import express from "express";
 import cors from "cors";
 import mongoose from "mongoose";
 import dotenv from "dotenv";
-import fetch from "node-fetch"; // npm install node-fetch@2
+import fetch from "node-fetch"; // v2
 import bcrypt from "bcrypt";
+import moment from "moment-timezone"; // ✨ Timezone fix
 
 dotenv.config();
 
@@ -13,7 +14,7 @@ const PORT = process.env.PORT || 5000;
 app.use(cors());
 app.use(express.json());
 
-// MongoDB connection
+// ---------- MongoDB Connection ----------
 mongoose
   .connect(process.env.MONGO_URI)
   .then(() => console.log("✅ Connected to MongoDB"))
@@ -45,6 +46,7 @@ const giftSchema = new mongoose.Schema({
   isOpened: { type: Boolean, default: false },
 }, { timestamps: true });
 
+// 🔐 Hash passcode before saving
 giftSchema.pre("save", async function (next) {
   if (!this.isModified("passcode")) return next();
   try {
@@ -117,6 +119,7 @@ app.post("/api/auth/google", async (req, res) => {
   }
 });
 
+// 📨 Create Gift
 app.post("/api/gift", async (req, res) => {
   const { senderId, receiverEmail, textMessage, imageUrl, videoUrl, unlockTimestamp, passcode } = req.body;
   if (!senderId || !receiverEmail || !unlockTimestamp || !passcode) {
@@ -124,7 +127,18 @@ app.post("/api/gift", async (req, res) => {
   }
 
   try {
-    const gift = new Gift({ senderId, receiverEmail, textMessage, imageUrl, videoUrl, unlockTimestamp, passcode });
+    // Convert to IST before saving
+    const istDate = moment.tz(unlockTimestamp, "Asia/Kolkata").toDate();
+
+    const gift = new Gift({
+      senderId,
+      receiverEmail,
+      textMessage,
+      imageUrl,
+      videoUrl,
+      unlockTimestamp: istDate,
+      passcode,
+    });
     await gift.save();
 
     await Transaction.create({ giftId: gift._id, sender: senderId, status: "CREATED" });
@@ -136,6 +150,7 @@ app.post("/api/gift", async (req, res) => {
   }
 });
 
+// 🎁 Open Gift
 app.post("/api/gift/open", async (req, res) => {
   const { giftId, enteredPasscode, accessToken } = req.body;
   if (!giftId || !enteredPasscode || !accessToken) {
@@ -144,7 +159,6 @@ app.post("/api/gift/open", async (req, res) => {
 
   try {
     const receiverUser = await verifyGoogleTokenAndGetUser(accessToken);
-
     const gift = await Gift.findById(giftId);
     if (!gift) return res.status(404).json({ error: "Gift not found" });
 
@@ -156,8 +170,11 @@ app.post("/api/gift/open", async (req, res) => {
       return res.status(200).json({ message: "Gift was already opened.", gift });
     }
 
-    if (Date.now() < new Date(gift.unlockTimestamp).getTime()) {
-      return res.status(403).json({ error: `This gift cannot be opened until ${new Date(gift.unlockTimestamp).toLocaleString()}` });
+    const nowIST = moment().tz("Asia/Kolkata").toDate();
+    if (nowIST < gift.unlockTimestamp) {
+      return res.status(403).json({
+        error: `Gift unlocks at ${moment(gift.unlockTimestamp).tz("Asia/Kolkata").format("LLLL")}`,
+      });
     }
 
     const isPasscodeCorrect = await gift.comparePasscode(enteredPasscode);
@@ -183,9 +200,10 @@ app.post("/api/gift/open", async (req, res) => {
   }
 });
 
+// 📦 Get Gift By ID
 app.get("/api/gift/:id", async (req, res) => {
   try {
-    const gift = await Gift.findById(req.params.id).select('-passcode -receiverEmail');
+    const gift = await Gift.findById(req.params.id).select("-passcode -receiverEmail");
     if (!gift) return res.status(404).json({ error: "Gift not found" });
     res.status(200).json(gift);
   } catch (err) {
@@ -194,7 +212,7 @@ app.get("/api/gift/:id", async (req, res) => {
   }
 });
 
-// 💬 Save a gift message
+// 💬 Add Gift Message
 app.post("/api/gift/messages", async (req, res) => {
   const { giftId, senderId, receiverEmail, messageText } = req.body;
   if (!giftId || !senderId || !receiverEmail || !messageText) {
@@ -210,7 +228,7 @@ app.post("/api/gift/messages", async (req, res) => {
   }
 });
 
-// 📜 Fetch all messages for a gift
+// 💬 Get All Messages
 app.get("/api/gift/messages/:giftId", async (req, res) => {
   try {
     const messages = await GiftMessage.find({ giftId: req.params.giftId })
@@ -222,7 +240,7 @@ app.get("/api/gift/messages/:giftId", async (req, res) => {
   }
 });
 
-// 🧾 All transactions
+// 📜 Transactions
 app.get("/api/transactions", async (req, res) => {
   try {
     const transactions = await Transaction.find()
@@ -236,12 +254,12 @@ app.get("/api/transactions", async (req, res) => {
   }
 });
 
-// Health check
+// 🧪 Health Check
 app.get("/", (req, res) => {
   res.send("🎁 ChronoGift backend API is running.");
 });
 
-// Start server
+// 🚀 Start Server
 app.listen(PORT, () => {
   console.log(`🚀 Server running at http://localhost:${PORT}`);
 });
