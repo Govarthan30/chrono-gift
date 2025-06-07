@@ -1,52 +1,69 @@
 import { useState } from "react";
 import axios from "axios";
 import type { User } from "./types";
-import styled, { keyframes, ThemeProvider, createGlobalStyle } from "styled-components";
-import { DateTime } from "luxon"; // ✅ Import Luxon
+import styled, { keyframes, ThemeProvider, createGlobalStyle,DefaultTheme } from "styled-components";
+import { DateTime } from 'luxon'; // ✅ Import Luxon
 
 const BACKEND_URL = "https://chrono-gift.onrender.com";
 
 // Themes...
-const lightTheme = {
-  mode: "light",
-  backgroundGradient: "linear-gradient(135deg, #fceabb 0%, #f8b500 100%)",
-  cardBackground: "white",
-  headingColor: "#d48806",
-  subHeadingColor: "#ff7e5f",
-  inputBorder: "#d48806",
-  inputFocusBorder: "#feb47b",
-  buttonGradient: "linear-gradient(45deg, #ff7e5f, #feb47b)",
-  buttonHoverGradient: "linear-gradient(45deg, #feb47b, #ff7e5f)",
+const lightTheme: DefaultTheme = {
+  mode: "light", 
+  background: "#f0f4f8",
+  backgroundGradient: "linear-gradient(135deg, #cce7ff 0%, #5a9bd5 100%)",
+  headingColor: "#004080",
+  cardBackground: "#ffffff",
+  cardBg: "#ffffff",          // duplicate key, keep both for compatibility
+  cardTextColor: "#004080",
+  textPrimary: "#004080",
+  textSecondary: "#004080cc",
+  primaryText: "#004080",
+  secondaryText: "#004080cc",
+  buttonBg: "#357ABD",
+  buttonGradient: "linear-gradient(45deg, #4a90e2, #357ABD)",
+  buttonHoverBg: "#4a90e2",
+  buttonHoverGradient: "linear-gradient(45deg, #357ABD, #4a90e2)",
+  inputBorder: "#357ABD",
+  inputBackground: "#ffffff",
+  inputColor: "#004080",
+  inputFocusBorder: "#74a9ff",
   errorColor: "#cc0000",
-  logoutBg: "#6c757d",
-  logoutHoverBg: "#5a6268",
-  footerBg: "#f9f9f9",
-  footerColor: "#999",
-  inputBackground: "white",
-  inputColor: "#333",
-  cardTextColor: "#444",
+  subHeadingColor: "#0059b3",
+  footerColor: "#004080",
+  footerBg: "#e0e7ff",
+  logoutBg: "#cc3300",
+  logoutHoverBg: "#ff0000",
+  boxShadow: "0 4px 15px rgba(58, 123, 255, 0.4), 0 8px 30px rgba(0, 0, 0, 0.1)",
 };
 
-const darkTheme = {
+const darkTheme: DefaultTheme = {
   mode: "dark",
-  backgroundGradient: "linear-gradient(135deg, #1e1e1e 0%, #3a3a3a 100%)",
-  cardBackground: "#2e2e2e",
-  headingColor: "#f6c90e",
-  subHeadingColor: "#ffa77a",
-  inputBorder: "#ffa77a",
-  inputFocusBorder: "#ffb07c",
-  buttonGradient: "linear-gradient(45deg, #ffa77a, #ffb07c)",
-  buttonHoverGradient: "linear-gradient(45deg, #ffb07c, #ffa77a)",
+  background: "#0f1624",
+  backgroundGradient: "linear-gradient(135deg, #1a2a6c 0%, #0f1624 100%)",
+  headingColor: "#9ecfff",
+  cardBackground: "#0f1624",
+  cardBg: "#0f1624",
+  cardTextColor: "#b3d1ff",
+  textPrimary: "#9ecfff",
+  textSecondary: "#b3d1ffcc",
+  primaryText: "#9ecfff",
+  secondaryText: "#b3d1ffcc",
+  buttonBg: "#1e3c72",
+  buttonGradient: "linear-gradient(45deg, #3771c8, #1e3c72)",
+  buttonHoverBg: "#3771c8",
+  buttonHoverGradient: "linear-gradient(45deg, #1e3c72, #3771c8)",
+  inputBorder: "#3771c8",
+  inputBackground: "#14243e",
+  inputColor: "#b3d1ff",
+  inputFocusBorder: "#5596ff",
   errorColor: "#ff6b6b",
-  logoutBg: "#444",
-  logoutHoverBg: "#555",
-  footerBg: "#222",
-  footerColor: "#ccc",
-  inputBackground: "#444",
-  inputColor: "#eee",
-  cardTextColor: "#eee",
+  subHeadingColor: "#a0bfff",
+  footerColor: "#b3d1ff",
+  footerBg: "#07102d",
+  logoutBg: "#ff6b6b",
+  logoutHoverBg: "#ff4a4a",
+  boxShadow: "0 4px 15px rgba(58, 123, 255, 0.7), 0 8px 30px rgba(0, 0, 0, 0.8)",
 };
-
 // Animations and styles
 const fadeIn = keyframes` from { opacity: 0; } to { opacity: 1; } `;
 const GlobalStyle = createGlobalStyle`

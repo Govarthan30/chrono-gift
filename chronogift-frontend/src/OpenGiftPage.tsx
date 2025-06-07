@@ -3,38 +3,73 @@ import { useParams } from "react-router-dom";
 import axios, { AxiosError } from "axios";
 import { useGoogleLogin } from "@react-oauth/google";
 import type { Gift } from "./types";
-import styled, { keyframes, ThemeProvider, createGlobalStyle } from "styled-components";
+import styled, { keyframes, ThemeProvider, createGlobalStyle, DefaultTheme } from "styled-components";
 
 const BACKEND_URL = "https://chrono-gift.onrender.com";
 
 // --- THEME SETUP ---
-const lightTheme = {
-  background: "linear-gradient(135deg, #cce7ff 0%, #5a9bd5 100%)",
-  cardBg: "white",
+// Use DefaultTheme type so these conform to your styled.d.ts interface
+
+const lightTheme: DefaultTheme = {
+   mode: "light", 
+  background: "#f0f4f8",
+  backgroundGradient: "linear-gradient(135deg, #cce7ff 0%, #5a9bd5 100%)",
+  headingColor: "#004080",
+  cardBackground: "#ffffff",
+  cardBg: "#ffffff",          // duplicate key, keep both for compatibility
+  cardTextColor: "#004080",
   textPrimary: "#004080",
   textSecondary: "#004080cc",
-  buttonBg: "linear-gradient(45deg, #4a90e2, #357ABD)",
-  buttonHoverBg: "linear-gradient(45deg, #357ABD, #4a90e2)",
-  errorColor: "#cc0000",
+  primaryText: "#004080",
+  secondaryText: "#004080cc",
+  buttonBg: "#357ABD",
+  buttonGradient: "linear-gradient(45deg, #4a90e2, #357ABD)",
+  buttonHoverBg: "#4a90e2",
+  buttonHoverGradient: "linear-gradient(45deg, #357ABD, #4a90e2)",
   inputBorder: "#357ABD",
+  inputBackground: "#ffffff",
+  inputColor: "#004080",
   inputFocusBorder: "#74a9ff",
+  errorColor: "#cc0000",
+  subHeadingColor: "#0059b3",
+  footerColor: "#004080",
+  footerBg: "#e0e7ff",
+  logoutBg: "#cc3300",
+  logoutHoverBg: "#ff0000",
   boxShadow: "0 4px 15px rgba(58, 123, 255, 0.4), 0 8px 30px rgba(0, 0, 0, 0.1)",
 };
 
-const darkTheme = {
-  background: "linear-gradient(135deg, #1a2a6c 0%, #0f1624 100%)",
+const darkTheme: DefaultTheme = {
+  mode: "dark",
+  background: "#0f1624",
+  backgroundGradient: "linear-gradient(135deg, #1a2a6c 0%, #0f1624 100%)",
+  headingColor: "#9ecfff",
+  cardBackground: "#0f1624",
   cardBg: "#0f1624",
+  cardTextColor: "#b3d1ff",
   textPrimary: "#9ecfff",
   textSecondary: "#b3d1ffcc",
-  buttonBg: "linear-gradient(45deg, #3771c8, #1e3c72)",
-  buttonHoverBg: "linear-gradient(45deg, #1e3c72, #3771c8)",
-  errorColor: "#ff6b6b",
+  primaryText: "#9ecfff",
+  secondaryText: "#b3d1ffcc",
+  buttonBg: "#1e3c72",
+  buttonGradient: "linear-gradient(45deg, #3771c8, #1e3c72)",
+  buttonHoverBg: "#3771c8",
+  buttonHoverGradient: "linear-gradient(45deg, #1e3c72, #3771c8)",
   inputBorder: "#3771c8",
+  inputBackground: "#14243e",
+  inputColor: "#b3d1ff",
   inputFocusBorder: "#5596ff",
+  errorColor: "#ff6b6b",
+  subHeadingColor: "#a0bfff",
+  footerColor: "#b3d1ff",
+  footerBg: "#07102d",
+  logoutBg: "#ff6b6b",
+  logoutHoverBg: "#ff4a4a",
   boxShadow: "0 4px 15px rgba(58, 123, 255, 0.7), 0 8px 30px rgba(0, 0, 0, 0.8)",
 };
 
-const GlobalStyle = createGlobalStyle<{ theme: typeof lightTheme }>`
+// Global styles with typed theme
+const GlobalStyle = createGlobalStyle`
   body {
     margin: 0;
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -222,7 +257,7 @@ function useTheme() {
 
 // --- MAIN COMPONENT ---
 function OpenGiftPage() {
-  const { giftId } = useParams();
+  const { giftId } = useParams<{ giftId: string }>();
   const [pageState, setPageState] = useState<"auth" | "passcode" | "opened" | "error">("auth");
   const [accessToken, setAccessToken] = useState<string | null>(null);
   const [passcode, setPasscode] = useState("");
@@ -232,7 +267,7 @@ function OpenGiftPage() {
 
   const { theme, toggleTheme } = useTheme();
 
-  const handleGoogleSuccess = async (credentialResponse: any) => {
+  const handleGoogleSuccess = (credentialResponse: any) => {
     setAccessToken(credentialResponse.access_token);
     setPageState("passcode");
     setError("");
@@ -262,6 +297,7 @@ function OpenGiftPage() {
       setGift(res.data.gift);
       setPageState("opened");
 
+      // Log opening, but don't fail on error
       await axios.post(`${BACKEND_URL}/api/gift/log-open`, {
         giftId,
         accessToken,
@@ -317,7 +353,7 @@ function OpenGiftPage() {
             {gift.videoUrl && <GiftContentVideo src={gift.videoUrl} controls />}
             {gift.unlockTimestamp && (
               <p style={{ marginTop: "12px", color: theme === "light" ? "#666" : "#ccc" }}>
-                Opened at: {formatDateInIST(gift.unlockTimestamp)}
+                Opened at: {formatDateInIST(String(gift.unlockTimestamp))}
               </p>
             )}
             {!gift.textMessage && !gift.imageUrl && !gift.videoUrl && (
@@ -346,7 +382,7 @@ function OpenGiftPage() {
     }
   };
 
-  if (!giftId || typeof giftId !== "string") {
+  if (!giftId) {
     return (
       <ThemeProvider theme={theme === "light" ? lightTheme : darkTheme}>
         <GlobalStyle />

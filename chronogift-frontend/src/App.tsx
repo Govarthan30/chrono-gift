@@ -13,33 +13,34 @@ import type { User } from "./types";
 const GOOGLE_CLIENT_ID = "980139118410-2mnqsu060hj0t1bgcrr6qbck2alnr42k.apps.googleusercontent.com";
 
 const lightTheme: DefaultTheme = {
-  background: "#e3f2fd",
-  text: "#0d47a1",
-  buttonBg: "linear-gradient(45deg, #2196f3, #64b5f6)",
-  buttonHoverBg: "linear-gradient(45deg, #64b5f6, #2196f3)",
-  backgroundGradient: "linear-gradient(to right, #e3f2fd, #bbdefb)",
-  headingColor: "#0d47a1",
+  mode: "light", 
+  background: "#f0f4f8",
+  backgroundGradient: "linear-gradient(135deg, #cce7ff 0%, #5a9bd5 100%)",
+  headingColor: "#004080",
   cardBackground: "#ffffff",
-  cardTextColor: "#0d47a1",
-  inputBorder: "#64b5f6",
+  cardBg: "#ffffff",          // duplicate key, keep both for compatibility
+  cardTextColor: "#004080",
+  textPrimary: "#004080",
+  textSecondary: "#004080cc",
+  primaryText: "#004080",
+  secondaryText: "#004080cc",
+  buttonBg: "#357ABD",
+  buttonGradient: "linear-gradient(45deg, #4a90e2, #357ABD)",
+  buttonHoverBg: "#4a90e2",
+  buttonHoverGradient: "linear-gradient(45deg, #357ABD, #4a90e2)",
+  inputBorder: "#357ABD",
   inputBackground: "#ffffff",
-  inputColor: "#0d47a1",
-  inputFocusBorder: "#2196f3",
-  buttonGradient: "linear-gradient(45deg, #2196f3, #64b5f6)",
-  buttonHoverGradient: "linear-gradient(45deg, #64b5f6, #2196f3)",
-  errorColor: "#d32f2f",
-  subHeadingColor: "#1976d2",
-  footerColor: "#0d47a1",
-  footerBg: "#bbdefb",
-  secondaryText: "#757575",
-  primaryText: "#0d47a1",
-  logoutBg: "#e53935",
-  logoutHoverBg: "#b71c1c",
-  cardBg: "#ffffff",
-  boxShadow: "0 4px 8px rgba(0, 0, 0, 0.1)",
-  textPrimary: "#0d47a1",
-  textSecondary: "#1976d2",
+  inputColor: "#004080",
+  inputFocusBorder: "#74a9ff",
+  errorColor: "#cc0000",
+  subHeadingColor: "#0059b3",
+  footerColor: "#004080",
+  footerBg: "#e0e7ff",
+  logoutBg: "#cc3300",
+  logoutHoverBg: "#ff0000",
+  boxShadow: "0 4px 15px rgba(58, 123, 255, 0.4), 0 8px 30px rgba(0, 0, 0, 0.1)",
 };
+
 
 
 const GlobalStyle = createGlobalStyle`
@@ -47,7 +48,7 @@ const GlobalStyle = createGlobalStyle`
     margin: 0;
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     background: ${({ theme }) => theme.background};
-    color: ${({ theme }) => theme.text};
+    color: red;
     transition: background 0.3s ease, color 0.3s ease;
     min-height: 100vh;
   }
@@ -70,7 +71,7 @@ const LandingContainer = styled.div`
   justify-content: center;
   min-height: 100vh;
   background: ${({ theme }) => theme.background};
-  color: ${({ theme }) => theme.text};
+  color: red;
   padding: 20px;
   text-align: center;
 `;

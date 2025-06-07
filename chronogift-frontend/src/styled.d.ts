@@ -1,33 +1,42 @@
-// src/styled.d.ts
+// styles.d.ts
 import "styled-components";
 
 declare module "styled-components" {
   export interface DefaultTheme {
+    mode: "light" | "dark"; 
     background: string;
-    text: string;
-    buttonBg: string;
-    buttonHoverBg: string;
     backgroundGradient: string;
     headingColor: string;
+
     cardBackground: string;
+    cardBg: string;           // duplicate key, keep both for compatibility
     cardTextColor: string;
+
+    textPrimary: string;
+    textSecondary: string;
+    primaryText: string;
+    secondaryText: string;
+
+    buttonBg: string;
+    buttonGradient: string;
+    buttonHoverBg: string;
+    buttonHoverGradient: string;
+
     inputBorder: string;
     inputBackground: string;
     inputColor: string;
     inputFocusBorder: string;
-    buttonGradient: string;
-    buttonHoverGradient: string;
+
     errorColor: string;
+
     subHeadingColor: string;
+
     footerColor: string;
     footerBg: string;
-    secondaryText: string;
-    primaryText: string;
+
     logoutBg: string;
     logoutHoverBg: string;
-    cardBg: string;
+
     boxShadow: string;
-    textPrimary: string;
-    textSecondary: string;
   }
 }
