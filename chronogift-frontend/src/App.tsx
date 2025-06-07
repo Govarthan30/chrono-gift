@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Routes, Route, Navigate, useLocation, useNavigate } from "react-router-dom";
 import { GoogleOAuthProvider } from "@react-oauth/google";
 import { AnimatePresence, motion } from "framer-motion";
-import styled, { ThemeProvider, createGlobalStyle } from "styled-components";
+import styled, { ThemeProvider, createGlobalStyle, DefaultTheme } from "styled-components";
 
 import LoginPage from "./LoginPage";
 import CreateGiftPage from "./CreateGiftPage";
@@ -12,27 +12,35 @@ import type { User } from "./types";
 
 const GOOGLE_CLIENT_ID = "980139118410-2mnqsu060hj0t1bgcrr6qbck2alnr42k.apps.googleusercontent.com";
 
-const lightTheme = {
+const lightTheme: DefaultTheme = {
   background: "#e3f2fd",
-  cardBg: "#ffffff",
   text: "#0d47a1",
-  inputBg: "#ffffff",
-  inputBorder: "#64b5f6",
   buttonBg: "linear-gradient(45deg, #2196f3, #64b5f6)",
   buttonHoverBg: "linear-gradient(45deg, #64b5f6, #2196f3)",
+  backgroundGradient: "linear-gradient(to right, #e3f2fd, #bbdefb)",
+  headingColor: "#0d47a1",
+  cardBackground: "#ffffff",
+  cardTextColor: "#0d47a1",
+  inputBorder: "#64b5f6",
+  inputBackground: "#ffffff",
+  inputColor: "#0d47a1",
+  inputFocusBorder: "#2196f3",
+  buttonGradient: "linear-gradient(45deg, #2196f3, #64b5f6)",
+  buttonHoverGradient: "linear-gradient(45deg, #64b5f6, #2196f3)",
   errorColor: "#d32f2f",
+  subHeadingColor: "#1976d2",
+  footerColor: "#0d47a1",
+  footerBg: "#bbdefb",
+  secondaryText: "#757575",
+  primaryText: "#0d47a1",
+  logoutBg: "#e53935",
+  logoutHoverBg: "#b71c1c",
+  cardBg: "#ffffff",
+  boxShadow: "0 4px 8px rgba(0, 0, 0, 0.1)",
+  textPrimary: "#0d47a1",
+  textSecondary: "#1976d2",
 };
 
-const darkTheme = {
-  background: "#0d47a1",
-  cardBg: "#1565c0",
-  text: "#e3f2fd",
-  inputBg: "#1e88e5",
-  inputBorder: "#90caf9",
-  buttonBg: "linear-gradient(45deg, #64b5f6, #2196f3)",
-  buttonHoverBg: "linear-gradient(45deg, #2196f3, #64b5f6)",
-  errorColor: "#ef9a9a",
-};
 
 const GlobalStyle = createGlobalStyle`
   body {
@@ -141,7 +149,6 @@ function App() {
       <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
         <AnimatePresence mode="wait">
           <Routes location={location} key={location.pathname}>
-            {/* Landing or redirect to create gift */}
             <Route
               path="/"
               element={
@@ -171,7 +178,6 @@ function App() {
               }
             />
 
-            {/* Login page route */}
             <Route
               path="/login"
               element={
@@ -188,7 +194,6 @@ function App() {
               }
             />
 
-            {/* Open gift route */}
             <Route
               path="/gift/:giftId"
               element={
@@ -205,7 +210,6 @@ function App() {
               }
             />
 
-            {/* Redirect any other route to / */}
             <Route path="*" element={<Navigate to="/" />} />
           </Routes>
 

@@ -178,6 +178,12 @@ const ThemeToggleBtn = styled.button`
   }
 `;
 
+// --- HELPER FUNCTION TO FORMAT DATE TO IST ---
+function formatDateInIST(isoDate: string) {
+  const date = new Date(isoDate);
+  return date.toLocaleString("en-IN", { timeZone: "Asia/Kolkata" });
+}
+
 // --- THEME HOOK ---
 function useTheme() {
   const [theme, setTheme] = useState<"light" | "dark">("light");
@@ -309,6 +315,11 @@ function OpenGiftPage() {
             {gift.textMessage && <p style={{ fontSize: "1.1em", whiteSpace: "pre-wrap" }}>{gift.textMessage}</p>}
             {gift.imageUrl && <GiftContentImage src={gift.imageUrl} alt="Gift" />}
             {gift.videoUrl && <GiftContentVideo src={gift.videoUrl} controls />}
+            {gift.unlockTimestamp && (
+              <p style={{ marginTop: "12px", color: theme === "light" ? "#666" : "#ccc" }}>
+                Opened at: {formatDateInIST(gift.unlockTimestamp)}
+              </p>
+            )}
             {!gift.textMessage && !gift.imageUrl && !gift.videoUrl && (
               <p>This gift is a beautiful thought, with no attached content.</p>
             )}

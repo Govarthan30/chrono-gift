@@ -2,10 +2,11 @@ import { useState } from "react";
 import axios from "axios";
 import type { User } from "./types";
 import styled, { keyframes, ThemeProvider, createGlobalStyle } from "styled-components";
+import { DateTime } from "luxon"; // ✅ Import Luxon
 
 const BACKEND_URL = "https://chrono-gift.onrender.com";
 
-// Define light and dark themes with a mode property for easy checks
+// Themes...
 const lightTheme = {
   mode: "light",
   backgroundGradient: "linear-gradient(135deg, #fceabb 0%, #f8b500 100%)",
@@ -46,13 +47,8 @@ const darkTheme = {
   cardTextColor: "#eee",
 };
 
-// Animations
-const fadeIn = keyframes`
-  from { opacity: 0; }
-  to { opacity: 1; }
-`;
-
-// Global styles to reset background & font colors per theme
+// Animations and styles
+const fadeIn = keyframes` from { opacity: 0; } to { opacity: 1; } `;
 const GlobalStyle = createGlobalStyle`
   body {
     margin: 0;
@@ -62,8 +58,6 @@ const GlobalStyle = createGlobalStyle`
     transition: background 0.3s ease, color 0.3s ease;
   }
 `;
-
-// Styled Components using theme props
 const PageContainer = styled.div`
   min-height: 100vh;
   display: flex;
@@ -74,20 +68,16 @@ const PageContainer = styled.div`
   position: relative;
   flex-direction: column;
 `;
-
 const Card = styled.div`
   background: ${({ theme }) => theme.cardBackground};
   border-radius: 20px;
   padding: 40px 30px;
   max-width: 500px;
   width: 100%;
-  box-shadow:
-    0 4px 15px rgba(255, 215, 0, 0.4),
-    0 8px 30px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 15px rgba(255, 215, 0, 0.4), 0 8px 30px rgba(0, 0, 0, 0.1);
   user-select: none;
   color: ${({ theme }) => theme.cardTextColor};
 `;
-
 const Label = styled.label`
   display: block;
   margin-top: 15px;
@@ -95,42 +85,30 @@ const Label = styled.label`
   font-weight: 600;
   color: ${({ theme }) => theme.headingColor};
 `;
-
 const Input = styled.input`
   width: 90%;
   padding: 10px 14px;
   font-size: 1rem;
   border-radius: 8px;
   border: 2px solid ${({ theme }) => theme.inputBorder};
-  outline: none;
-  transition: border-color 0.3s ease;
-  font-family: inherit;
   background: ${({ theme }) => theme.inputBackground};
   color: ${({ theme }) => theme.inputColor};
-
   &:focus {
     border-color: ${({ theme }) => theme.inputFocusBorder};
   }
 `;
-
 const TextArea = styled.textarea`
   width: 90%;
   padding: 10px 14px;
   font-size: 1rem;
   border-radius: 8px;
   border: 2px solid ${({ theme }) => theme.inputBorder};
-  outline: none;
-  transition: border-color 0.3s ease;
-  resize: vertical;
-  font-family: inherit;
   background: ${({ theme }) => theme.inputBackground};
   color: ${({ theme }) => theme.inputColor};
-
   &:focus {
     border-color: ${({ theme }) => theme.inputFocusBorder};
   }
 `;
-
 const Button = styled.button<{ disabled?: boolean }>`
   background: ${({ theme }) => theme.buttonGradient};
   border: none;
@@ -143,100 +121,77 @@ const Button = styled.button<{ disabled?: boolean }>`
   margin-top: 30px;
   width: 100%;
   box-shadow: 0 5px 15px rgba(255, 126, 95, 0.6);
-  transition: background 0.3s ease, box-shadow 0.3s ease, transform 0.1s ease;
-  user-select: none;
-
+  transition: background 0.3s ease, transform 0.1s ease;
   &:hover {
     background: ${({ theme }) => theme.buttonHoverGradient};
-    box-shadow: 0 8px 20px rgba(255, 180, 130, 0.9);
   }
-
   &:active {
     transform: scale(0.97);
   }
-
   &:disabled {
     opacity: 0.6;
     cursor: not-allowed;
-    box-shadow: none;
   }
 `;
-
 const ErrorText = styled.p`
   color: ${({ theme }) => theme.errorColor};
   margin-top: 12px;
   font-weight: 600;
   text-align: center;
 `;
-
 const HeaderRow = styled.div`
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-bottom: 20px;
-
   h2 {
     color: ${({ theme }) => theme.headingColor};
     font-weight: 700;
-    user-select: none;
   }
 `;
-
 const LogoutButton = styled(Button)`
   background-color: ${({ theme }) => theme.logoutBg};
   box-shadow: none;
-
   &:hover {
     background-color: ${({ theme }) => theme.logoutHoverBg};
   }
 `;
-
 const GiftLinkContainer = styled.div`
   text-align: center;
-
   h3 {
     color: ${({ theme }) => theme.subHeadingColor};
     font-weight: 700;
-    user-select: none;
   }
-
   a {
-    word-break: break-all;
+    word-break: break-word;
     color: ${({ theme }) => theme.subHeadingColor};
     font-weight: 600;
     text-decoration: none;
-
     &:hover {
       text-decoration: underline;
     }
   }
 `;
-
 const Footer = styled.footer`
   width: 100%;
   text-align: center;
   padding: 12px 0;
   font-size: 0.85rem;
   color: ${({ theme }) => theme.footerColor};
-  user-select: none;
   background: ${({ theme }) => theme.footerBg};
   position: fixed;
   bottom: 0;
   left: 0;
   box-shadow: 0 -1px 5px rgba(0, 0, 0, 0.05);
-
   a {
     color: ${({ theme }) => theme.headingColor};
     text-decoration: none;
     font-weight: 600;
-
     &:hover {
       text-decoration: underline;
     }
   }
 `;
-
-// Theme Toggle Button
 const ThemeToggleButton = styled.button`
   position: fixed;
   top: 15px;
@@ -248,15 +203,13 @@ const ThemeToggleButton = styled.button`
   border-radius: 20px;
   cursor: pointer;
   font-weight: 600;
-  user-select: none;
   box-shadow: 0 3px 10px rgba(255, 126, 95, 0.6);
-  transition: background 0.3s ease;
-
   &:hover {
     background: ${({ theme }) => theme.buttonHoverGradient};
   }
 `;
 
+// 🧠 Main Component
 function CreateGiftPage({ user, onLogout }: { user: User; onLogout: () => void }) {
   const [receiverEmail, setReceiverEmail] = useState("");
   const [textMessage, setTextMessage] = useState("");
@@ -266,8 +219,6 @@ function CreateGiftPage({ user, onLogout }: { user: User; onLogout: () => void }
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [giftLink, setGiftLink] = useState<string | null>(null);
-
-  // Theme state: default to light mode
   const [theme, setTheme] = useState(lightTheme);
 
   const toggleTheme = () => {
@@ -280,11 +231,16 @@ function CreateGiftPage({ user, onLogout }: { user: User; onLogout: () => void }
       return;
     }
 
-    const unlockTimestamp = new Date(`${unlockDate}T${unlockTime}`);
-    if (unlockTimestamp <= new Date()) {
+    const indiaTime = DateTime.fromISO(`${unlockDate}T${unlockTime}`, {
+      zone: "Asia/Kolkata",
+    });
+
+    if (indiaTime <= DateTime.now().setZone("Asia/Kolkata")) {
       setError("Unlock date and time must be in the future.");
       return;
     }
+
+    const unlockTimestamp = indiaTime.toUTC().toISO();
 
     setError("");
     setLoading(true);
@@ -294,7 +250,7 @@ function CreateGiftPage({ user, onLogout }: { user: User; onLogout: () => void }
         senderId: user.id,
         receiverEmail,
         textMessage,
-        unlockTimestamp: unlockTimestamp.toISOString(),
+        unlockTimestamp,
         passcode,
       });
       setGiftLink(`${window.location.origin}/gift/${res.data.gift._id}`);
@@ -318,14 +274,11 @@ function CreateGiftPage({ user, onLogout }: { user: User; onLogout: () => void }
             <h2>Create Time-Locked Gift</h2>
             <LogoutButton onClick={onLogout}>Logout</LogoutButton>
           </HeaderRow>
-
           {giftLink ? (
             <GiftLinkContainer>
               <h3>Gift Created!</h3>
               <p>Share this link with the recipient:</p>
-              <a href={giftLink} target="_blank" rel="noopener noreferrer">
-                {giftLink}
-              </a>
+              <a href={giftLink} target="_blank" rel="noopener noreferrer">{giftLink}</a>
               <Button onClick={() => setGiftLink(null)} style={{ marginTop: "20px" }}>
                 Create another gift
               </Button>
@@ -333,12 +286,7 @@ function CreateGiftPage({ user, onLogout }: { user: User; onLogout: () => void }
           ) : (
             <>
               <Label>Receiver's Email *</Label>
-              <Input
-                type="email"
-                value={receiverEmail}
-                onChange={(e) => setReceiverEmail(e.target.value)}
-                placeholder="example@domain.com"
-              />
+              <Input type="email" value={receiverEmail} onChange={(e) => setReceiverEmail(e.target.value)} />
 
               <Label>Message</Label>
               <TextArea value={textMessage} onChange={(e) => setTextMessage(e.target.value)} rows={4} />
@@ -358,7 +306,6 @@ function CreateGiftPage({ user, onLogout }: { user: User; onLogout: () => void }
               />
 
               {error && <ErrorText>{error}</ErrorText>}
-
               <Button onClick={handleCreateGift} disabled={loading}>
                 {loading ? "Creating..." : "Create Gift"}
               </Button>
