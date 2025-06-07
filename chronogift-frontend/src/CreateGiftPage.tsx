@@ -2,7 +2,7 @@ import { useState } from "react";
 import axios from "axios";
 import type { User } from "./types";
 import styled, { keyframes, ThemeProvider, createGlobalStyle,DefaultTheme } from "styled-components";
-import { DateTime } from 'luxon'; // ✅ Import Luxon
+import { DateTime } from "luxon"; // ✅ Import Luxon
 
 const BACKEND_URL = "https://chrono-gift.onrender.com";
 
