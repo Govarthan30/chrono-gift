@@ -5,7 +5,7 @@ import { useGoogleLogin } from "@react-oauth/google";
 import type { Gift } from "./types";
 import styled, { keyframes, ThemeProvider, createGlobalStyle, DefaultTheme } from "styled-components";
 
-const BACKEND_URL = "https://chrono-gift.onrender.com";
+const BACKEND_URL = "http://localhost:5000";
 
 // --- THEME SETUP ---
 // Use DefaultTheme type so these conform to your styled.d.ts interface

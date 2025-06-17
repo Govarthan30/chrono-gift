@@ -4,7 +4,7 @@ import { useGoogleLogin } from "@react-oauth/google";
 import type { User } from "./types";
 import styled, { ThemeProvider, createGlobalStyle,DefaultTheme } from "styled-components";
 
-const BACKEND_URL = "https://chrono-gift.onrender.com";
+const BACKEND_URL = "http://localhost:5000";
 
 // ---- Single fixed theme (light) ----
 const lightTheme: DefaultTheme = {
