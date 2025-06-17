@@ -138,12 +138,7 @@ app.post("/api/gift", async (req, res) => {
   }
 
   try {
-    // Validate unlockTimestamp
-    if (typeof unlockTimestamp !== "string") {
-      return res.status(400).json({ error: "unlockTimestamp must be a string" });
-    }
-
-    const istMoment = moment.tz(unlockTimestamp, "Asia/Kolkata", true);
+    const istMoment = moment.tz(unlockTimestamp, "Asia/Kolkata");
     if (!istMoment.isValid()) {
       return res.status(400).json({ error: "Invalid unlockTimestamp format" });
     }
@@ -168,7 +163,11 @@ app.post("/api/gift", async (req, res) => {
 
     res.status(201).json({ message: "Gift created successfully", gift });
   } catch (error) {
-    console.error("❌ Gift creation error:", error);
+    console.error("❌ Gift creation error details:", {
+      message: error.message,
+      stack: error.stack,
+      name: error.name,
+    });
     res.status(500).json({ error: "Failed to create gift. " + (error.message || "") });
   }
 });
@@ -182,8 +181,8 @@ app.post("/api/gift/open", async (req, res) => {
 
   try {
     const receiverUser = await verifyGoogleTokenAndGetUser(accessToken);
-
     const gift = await Gift.findById(giftId).select("+passcode");
+
     if (!gift) return res.status(404).json({ error: "Gift not found" });
 
     if (gift.receiverEmail !== receiverUser.email.toLowerCase()) {
