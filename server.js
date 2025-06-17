@@ -8,12 +8,10 @@ import moment from "moment-timezone";
 import path from "path";
 import { fileURLToPath } from "url";
 
-// Needed for __dirname in ES modules
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 dotenv.config();
-
 const app = express();
 const PORT = process.env.PORT || 5000;
 
@@ -42,7 +40,7 @@ const User = mongoose.model("User", userSchema);
 const giftSchema = new mongoose.Schema({
   senderId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
   receiverId: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
-  receiverEmail: { type: String, required: true, lowercase: true, trim: true },
+  receiverEmail: { type: String, required: true },
   textMessage: String,
   imageUrl: String,
   videoUrl: String,
@@ -53,13 +51,9 @@ const giftSchema = new mongoose.Schema({
 
 giftSchema.pre("save", async function (next) {
   if (!this.isModified("passcode")) return next();
-  try {
-    const salt = await bcrypt.genSalt(10);
-    this.passcode = await bcrypt.hash(this.passcode, salt);
-    next();
-  } catch (error) {
-    next(error);
-  }
+  const salt = await bcrypt.genSalt(10);
+  this.passcode = await bcrypt.hash(this.passcode, salt);
+  next();
 });
 
 giftSchema.methods.comparePasscode = async function (enteredPasscode) {
@@ -86,7 +80,7 @@ const messageSchema = new mongoose.Schema({
 
 const GiftMessage = mongoose.model("GiftMessage", messageSchema);
 
-// ---------- AUTH HELPER ----------
+// ---------- Google Auth Helper ----------
 const verifyGoogleTokenAndGetUser = async (accessToken) => {
   const response = await fetch("https://www.googleapis.com/oauth2/v3/userinfo", {
     headers: { Authorization: `Bearer ${accessToken}` },
@@ -104,9 +98,8 @@ const verifyGoogleTokenAndGetUser = async (accessToken) => {
   return user;
 };
 
-// ---------- ROUTES ----------
+// ---------- API Routes ----------
 
-// 🔐 Google Auth
 app.post("/api/auth/google", async (req, res) => {
   const { accessToken } = req.body;
   if (!accessToken) return res.status(400).json({ error: "Access token required" });
@@ -123,7 +116,6 @@ app.post("/api/auth/google", async (req, res) => {
   }
 });
 
-// 📨 Create Gift
 app.post("/api/gift", async (req, res) => {
   const {
     senderId,
@@ -165,12 +157,11 @@ app.post("/api/gift", async (req, res) => {
 
     res.status(201).json({ message: "Gift created successfully", gift });
   } catch (error) {
-    console.error("❌ Gift creation error:", error);
-    res.status(500).json({ error: "Failed to create gift. " + (error.message || "") });
+    console.error("Gift creation error:", error);
+    res.status(500).json({ error: "Failed to create gift" });
   }
 });
 
-// 🎁 Open Gift
 app.post("/api/gift/open", async (req, res) => {
   const { giftId, enteredPasscode, accessToken } = req.body;
   if (!giftId || !enteredPasscode || !accessToken) {
@@ -185,10 +176,6 @@ app.post("/api/gift/open", async (req, res) => {
 
     if (gift.receiverEmail !== receiverUser.email.toLowerCase()) {
       return res.status(403).json({ error: "This gift is intended for another recipient." });
-    }
-
-    if (gift.isOpened) {
-      return res.status(200).json({ message: "Gift was already opened.", gift });
     }
 
     const nowIST = moment().tz("Asia/Kolkata").toDate();
@@ -220,11 +207,10 @@ app.post("/api/gift/open", async (req, res) => {
     res.status(200).json({ message: "Gift opened successfully!", gift: giftObj });
   } catch (error) {
     console.error("Error opening gift:", error);
-    res.status(500).json({ error: error.message || "Failed to open gift." });
+    res.status(500).json({ error: "Failed to open gift." });
   }
 });
 
-// 📦 Get Gift By ID
 app.get("/api/gift/:id", async (req, res) => {
   try {
     const gift = await Gift.findById(req.params.id).select("-passcode -receiverEmail");
@@ -236,7 +222,7 @@ app.get("/api/gift/:id", async (req, res) => {
   }
 });
 
-// 💬 Add Gift Message
+// ---------- Messages ----------
 app.post("/api/gift/messages", async (req, res) => {
   const { giftId, senderId, receiverEmail, messageText } = req.body;
   if (!giftId || !senderId || !receiverEmail || !messageText) {
@@ -252,7 +238,6 @@ app.post("/api/gift/messages", async (req, res) => {
   }
 });
 
-// 💬 Get All Messages
 app.get("/api/gift/messages/:giftId", async (req, res) => {
   try {
     const messages = await GiftMessage.find({ giftId: req.params.giftId }).populate("senderId", "name email");
@@ -263,7 +248,6 @@ app.get("/api/gift/messages/:giftId", async (req, res) => {
   }
 });
 
-// 📜 Transactions
 app.get("/api/transactions", async (req, res) => {
   try {
     const transactions = await Transaction.find()
@@ -278,13 +262,15 @@ app.get("/api/transactions", async (req, res) => {
 });
 
 // ---------- Serve Frontend ----------
+// Serve static files from frontend build folder
 app.use(express.static(path.join(__dirname, "chronogift-frontend", "dist")));
 
+// For any other routes, serve index.html (for React Router)
 app.get(/^\/(?!api\/).*/, (req, res) => {
   res.sendFile(path.join(__dirname, "chronogift-frontend", "dist", "index.html"));
 });
 
-// 🚀 Start Server
+// Start the server
 app.listen(PORT, () => {
   console.log(`🚀 Server running at http://localhost:${PORT}`);
 });
