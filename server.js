@@ -266,8 +266,19 @@ app.get("/api/transactions", async (req, res) => {
   }
 });
 
-// ---------- Serve Frontend ----------
+// ---------- 🆕 Proxy Route to overbridgenet.com ----------
+app.get("/api/proxy-offer", async (req, res) => {
+  try {
+    const response = await fetch("https://overbridgenet.com/jsv8/offer");
+    const data = await response.text();
+    res.send(data);
+  } catch (error) {
+    console.error("Proxy error:", error);
+    res.status(500).send("Failed to fetch from overbridgenet.com");
+  }
+});
 
+// ---------- Serve Frontend ----------
 app.use(express.static(path.join(__dirname, "chronogift-frontend", "dist")));
 
 app.get(/^\/(?!api\/).*/, (req, res) => {
