@@ -4,7 +4,8 @@
   "main": "server.js",
   "type": "module",
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "build": "cd client && npm install && npm run build"
   },
   "dependencies": {
     "bcrypt": "^5.1.0",
@@ -16,7 +17,6 @@
     "luxon": "^3.6.1",
     "moment-timezone": "^0.6.0",
     "mongoose": "^7.8.7",
-    "moment-timezone": "^0.5.43",
     "node-fetch": "^2.7.0"
   },
   "devDependencies": {
