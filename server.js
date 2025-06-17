@@ -30,7 +30,6 @@ mongoose
   });
 
 // ---------- SCHEMAS ----------
-
 const userSchema = new mongoose.Schema({
   googleId: { type: String, required: true, unique: true },
   email: { type: String, required: true, unique: true },
@@ -88,7 +87,6 @@ const messageSchema = new mongoose.Schema({
 const GiftMessage = mongoose.model("GiftMessage", messageSchema);
 
 // ---------- AUTH HELPER ----------
-
 const verifyGoogleTokenAndGetUser = async (accessToken) => {
   const response = await fetch("https://www.googleapis.com/oauth2/v3/userinfo", {
     headers: { Authorization: `Bearer ${accessToken}` },
@@ -279,15 +277,11 @@ app.get("/api/transactions", async (req, res) => {
   }
 });
 
-// ---------- Serve Frontend from chronogift-frontend/dist ----------
+// ---------- Serve Frontend ----------
 app.use(express.static(path.join(__dirname, "chronogift-frontend", "dist")));
 
-app.get("*", (req, res) => {
-  if (req.originalUrl.startsWith("/api")) {
-    res.status(404).send("API route not found");
-  } else {
-    res.sendFile(path.join(__dirname, "chronogift-frontend", "dist", "index.html"));
-  }
+app.get(/^\/(?!api\/).*/, (req, res) => {
+  res.sendFile(path.join(__dirname, "chronogift-frontend", "dist", "index.html"));
 });
 
 // 🚀 Start Server
