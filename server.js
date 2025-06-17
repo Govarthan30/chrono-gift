@@ -137,8 +137,6 @@ app.post("/api/gift", async (req, res) => {
     passcode,
   } = req.body;
 
-  console.log("🎯 /api/gift payload:", req.body);
-
   if (!senderId || !receiverEmail || !unlockTimestamp || !passcode) {
     return res.status(400).json({ error: "Missing required fields" });
   }
@@ -169,11 +167,7 @@ app.post("/api/gift", async (req, res) => {
 
     res.status(201).json({ message: "Gift created successfully", gift });
   } catch (error) {
-    console.error("❌ Gift creation error details:", {
-      message: error.message,
-      stack: error.stack,
-      name: error.name,
-    });
+    console.error("❌ Gift creation error:", error);
     res.status(500).json({ error: "Failed to create gift. " + (error.message || "") });
   }
 });
@@ -285,14 +279,14 @@ app.get("/api/transactions", async (req, res) => {
   }
 });
 
-// ---------- Serve Frontend for Hosting ----------
-app.use(express.static(path.join(__dirname, "client", "dist")));
+// ---------- Serve Frontend from chronogift-frontend/dist ----------
+app.use(express.static(path.join(__dirname, "chronogift-frontend", "dist")));
 
 app.get("*", (req, res) => {
   if (req.originalUrl.startsWith("/api")) {
     res.status(404).send("API route not found");
   } else {
-    res.sendFile(path.join(__dirname, "client", "dist", "index.html"));
+    res.sendFile(path.join(__dirname, "chronogift-frontend", "dist", "index.html"));
   }
 });
 
