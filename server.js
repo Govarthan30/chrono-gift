@@ -5,6 +5,12 @@ import dotenv from "dotenv";
 import fetch from "node-fetch";
 import bcrypt from "bcrypt";
 import moment from "moment-timezone";
+import path from "path";
+import { fileURLToPath } from "url";
+
+// Needed for __dirname in ES modules
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 dotenv.config();
 
@@ -279,9 +285,15 @@ app.get("/api/transactions", async (req, res) => {
   }
 });
 
-// 🧪 Health Check
-app.get("/", (req, res) => {
-  res.send("🎁 ChronoGift backend API is running.");
+// ---------- Serve Frontend for Hosting ----------
+app.use(express.static(path.join(__dirname, "client", "dist")));
+
+app.get("*", (req, res) => {
+  if (req.originalUrl.startsWith("/api")) {
+    res.status(404).send("API route not found");
+  } else {
+    res.sendFile(path.join(__dirname, "client", "dist", "index.html"));
+  }
 });
 
 // 🚀 Start Server
