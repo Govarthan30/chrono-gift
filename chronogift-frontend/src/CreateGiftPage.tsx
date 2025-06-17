@@ -4,7 +4,7 @@ import type { User } from "./types";
 import styled, { keyframes, ThemeProvider, createGlobalStyle,DefaultTheme } from "styled-components";
 import { DateTime } from "luxon"; // ✅ Import Luxon
 
-const BACKEND_URL = "http://localhost:5000";
+const BACKEND_URL = "https://chrono-gift.onrender.com";
 
 // Themes...
 const lightTheme: DefaultTheme = {
