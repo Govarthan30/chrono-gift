@@ -27,7 +27,7 @@ mongoose
     process.exit(1);
   });
 
-// ---------- SCHEMAS ----------
+// ---------- Schemas ----------
 const userSchema = new mongoose.Schema({
   googleId: { type: String, required: true, unique: true },
   email: { type: String, required: true, unique: true },
@@ -80,7 +80,7 @@ const messageSchema = new mongoose.Schema({
 
 const GiftMessage = mongoose.model("GiftMessage", messageSchema);
 
-// ---------- Google Auth Helper ----------
+// ---------- Google Auth ----------
 const verifyGoogleTokenAndGetUser = async (accessToken) => {
   const response = await fetch("https://www.googleapis.com/oauth2/v3/userinfo", {
     headers: { Authorization: `Bearer ${accessToken}` },
@@ -100,6 +100,7 @@ const verifyGoogleTokenAndGetUser = async (accessToken) => {
 
 // ---------- API Routes ----------
 
+// Auth
 app.post("/api/auth/google", async (req, res) => {
   const { accessToken } = req.body;
   if (!accessToken) return res.status(400).json({ error: "Access token required" });
@@ -116,6 +117,7 @@ app.post("/api/auth/google", async (req, res) => {
   }
 });
 
+// Create Gift
 app.post("/api/gift", async (req, res) => {
   const {
     senderId,
@@ -162,6 +164,7 @@ app.post("/api/gift", async (req, res) => {
   }
 });
 
+// Open Gift
 app.post("/api/gift/open", async (req, res) => {
   const { giftId, enteredPasscode, accessToken } = req.body;
   if (!giftId || !enteredPasscode || !accessToken) {
@@ -211,6 +214,7 @@ app.post("/api/gift/open", async (req, res) => {
   }
 });
 
+// Get Gift
 app.get("/api/gift/:id", async (req, res) => {
   try {
     const gift = await Gift.findById(req.params.id).select("-passcode -receiverEmail");
@@ -222,7 +226,7 @@ app.get("/api/gift/:id", async (req, res) => {
   }
 });
 
-// ---------- Messages ----------
+// Gift Messages
 app.post("/api/gift/messages", async (req, res) => {
   const { giftId, senderId, receiverEmail, messageText } = req.body;
   if (!giftId || !senderId || !receiverEmail || !messageText) {
@@ -248,6 +252,7 @@ app.get("/api/gift/messages/:giftId", async (req, res) => {
   }
 });
 
+// Transactions
 app.get("/api/transactions", async (req, res) => {
   try {
     const transactions = await Transaction.find()
@@ -262,15 +267,14 @@ app.get("/api/transactions", async (req, res) => {
 });
 
 // ---------- Serve Frontend ----------
-// Serve static files from frontend build folder
+
 app.use(express.static(path.join(__dirname, "chronogift-frontend", "dist")));
 
-// For any other routes, serve index.html (for React Router)
 app.get(/^\/(?!api\/).*/, (req, res) => {
   res.sendFile(path.join(__dirname, "chronogift-frontend", "dist", "index.html"));
 });
 
-// Start the server
+// ---------- Start Server ----------
 app.listen(PORT, () => {
   console.log(`🚀 Server running at http://localhost:${PORT}`);
 });
