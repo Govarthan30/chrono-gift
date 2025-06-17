@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "start": "node server.js",
-    "build": "cd client && npm install && npm run build"
+    "build": "cd chronogift-frontend && npm install && npm run build"
   },
   "dependencies": {
     "bcrypt": "^5.1.0",
